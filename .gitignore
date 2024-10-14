@@ -1,0 +1,7 @@
+node_modules/
+
+.env
+
+# Ignore logs and cache files
+*.log
+*.cache
