@@ -1,51 +1,68 @@
 const express = require('express');
 const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
-const fs = require('fs');
 const path = require('path');
-const app = express();
+const cors = require('cors');
+require('dotenv').config();
 
-// Configure Cloudinary
+const app = express();
+app.use(cors());
+
+// Configure Cloudinary with environment variables
 cloudinary.config({
-  cloud_name: 'dyctunopr',
-  api_key: '828774135796583',
-  api_secret: '8wnZs1xL8qcIVmOj5dW-DohPbBo'
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
 });
+
+// Ensure the uploads directory exists
+const uploadsDir = path.join(__dirname, 'uploads');
+const fs = require('fs');
+if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir);
+}
 
 // Set up Multer for handling image uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, './uploads'); // Folder to temporarily store images before uploading to Cloudinary
+    cb(null, uploadsDir);  // Save images to the 'uploads' folder
   },
   filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname)); // Set a unique filename
+    cb(null, Date.now() + path.extname(file.originalname));  // Unique filenames
   }
 });
 
-const upload = multer({ storage: storage });
+const upload = multer({ storage: storage }).single('image');
 
 // Route to handle image upload
-app.post('/upload', upload.single('image'), (req, res) => {
-  const imagePath = req.file.path; // Path to the uploaded image
-
-  // Upload to Cloudinary
-  cloudinary.uploader.upload(imagePath, { folder: 'your_folder_name' }, (err, result) => {
+app.post('/upload', (req, res) => {
+  upload(req, res, (err) => {
     if (err) {
-      console.error('Error uploading image to Cloudinary:', err);
-      return res.status(500).send('Error uploading image');
+      console.error('Error during upload:', err);
+      return res.status(500).json({ message: err.message });
     }
 
-    // After successful upload, delete the local file
-    fs.unlink(imagePath, (err) => {
-      if (err) {
-        console.error('Error deleting local image file:', err);
-      }
-    });
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded' });
+    }
 
-    // Return the URL of the uploaded image
-    res.status(200).json({
-      message: 'Image uploaded successfully',
-      imageUrl: result.secure_url
+    const imagePath = req.file.path;  // Path to the uploaded image
+
+    // Upload image to Cloudinary
+    cloudinary.uploader.upload(imagePath, { folder: 'your_folder_name' }, (err, result) => {
+      if (err) {
+        console.error('Error uploading image to Cloudinary:', err);
+        return res.status(500).json({ message: 'Cloudinary upload error' });
+      }
+
+      console.log('Image uploaded to Cloudinary:', result.secure_url);
+
+      // No file deletion here, keeping the local copy
+      res.status(200).json({
+        message: 'Image uploaded successfully',
+        imageUrl: result.secure_url,  // Cloudinary URL
+        localFilePath: imagePath      // Path to local image
+      });
     });
   });
 });
