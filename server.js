@@ -3,14 +3,13 @@ const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const fs = require('fs');
 const path = require('path');
-
 const app = express();
 
 // Configure Cloudinary
 cloudinary.config({
-  cloud_name: 'YOUR_CLOUD_NAME',
-  api_key: 'YOUR_API_KEY',
-  api_secret: 'YOUR_API_SECRET'
+  cloud_name: 'dyctunopr',
+  api_key: '828774135796583',
+  api_secret: '8wnZs1xL8qcIVmOj5dW-DohPbBo'
 });
 
 // Set up Multer for handling image uploads
