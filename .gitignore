@@ -5,3 +5,4 @@ node_modules/
 # Ignore logs and cache files
 *.log
 *.cache
+https://lastone-production.up.railway.app
